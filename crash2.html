@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>合成マス文字生成ツール（最大100万）</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    textarea, input, select, button {
+      font-size: 16px;
+      width: 90%;
+      max-width: 600px;
+      padding: 12px;
+      margin: 10px auto;
+      border-radius: 6px;
+      border: none;
+      display: block;
+    }
+    #output {
+      font-size: 28px;
+      white-space: pre-wrap;
+      background: #222;
+      color: #0f0;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      max-width: 95%;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      user-select: all;
+      cursor: pointer;
+    }
+    .note {
+      color: #aaa;
+      font-size: 14px;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    @media (min-width: 600px) {
+      .btn-group {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>🧿 クラッシュ文字改良版　byしろく</h2>
+
+  <label>使いたい文字セット：</label>
+  <textarea id="charSetInput">ࣰࣱࣲ࣭࣮࣯ࣶࣹࣺ࣪࣫࣬ࣳࣴࣵࣷࣸࣻࣼࣽࣾࣿ</textarea>
+
+  <label>合成数（1マスに重ねる文字数、最大1000000）：</label>
+  <input type="number" id="countInput" value="1000" min="1" max="1000000" />
+
+  <label>並べ方：</label>
+  <select id="layoutSelect">
+    <option value="horizontal">横に並べる（1行）</option>
+    <option value="vertical">縦に並べる（1列）</option>
+    <option value="grid">グリッド（例: 5x5）</option>
+  </select>
+
+  <label>並べる数（個数 or 横x縦）：</label>
+  <input type="text" id="amountInput" value="10" />
+
+  <div class="btn-group">
+    <button onclick="generate()">▶️ 生成</button>
+    <button onclick="downloadTxt()">📁 .txtでダウンロード</button>
+  </div>
+
+  <div id="output" title="クリックでコピー可">🌀 ここに表示されます</div>
+  <div class="note">※ 貼ると1マスに大量の文字が含まれます。スマホで重すぎると落ちるかも</div>
+
+  <script>
+    let lastGenerated = '';
+
+    function makeChar(charSet, count) {
+      const base = 'ـ';
+      let out = base;
+      for (let i = 0; i < count; i++) {
+        out += charSet[Math.floor(Math.random() * charSet.length)];
+      }
+      return out;
+    }
+
+    function generate() {
+      const charSet = document.getElementById("charSetInput").value;
+      const count = Math.min(parseInt(document.getElementById("countInput").value), 1000000);
+      const layout = document.getElementById("layoutSelect").value;
+      const amountRaw = document.getElementById("amountInput").value.trim();
+      let output = '';
+
+      if (!charSet || count <= 0) return;
+
+      if (layout === "horizontal") {
+        const n = parseInt(amountRaw);
+        for (let i = 0; i < n; i++) output += makeChar(charSet, count);
+      } else if (layout === "vertical") {
+        const n = parseInt(amountRaw);
+        for (let i = 0; i < n; i++) output += makeChar(charSet, count) + '\n';
+      } else if (layout === "grid") {
+        const [w, h] = amountRaw.split('x').map(Number);
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            output += makeChar(charSet, count);
+          }
+          output += '\n';
+        }
+      }
+
+      document.getElementById("output").textContent = output;
+      lastGenerated = output;
+
+      // クリックでコピー
+      document.getElementById("output").onclick = () => {
+        navigator.clipboard.writeText(output).then(() => {
+          const el = document.getElementById("output");
+          el.textContent = "✅ コピーしました";
+          setTimeout(() => { el.textContent = output }, 1000);
+        });
+      };
+    }
+
+    function downloadTxt() {
+      if (!lastGenerated) return;
+      const blob = new Blob([lastGenerated], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "generated-masu.txt";
+      link.click();
+    }
+  </script>
+</body>
+</html>
